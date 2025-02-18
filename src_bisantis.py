@@ -11,7 +11,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import pyvista as pv
 import numpy as np
 import ezdxf
-from stpyvista import stpyvista
+#from stpyvista import stpyvista
 
 from concreteproperties.material import Concrete, SteelBar
 from concreteproperties.stress_strain_profile import (

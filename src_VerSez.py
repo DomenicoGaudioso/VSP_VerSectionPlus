@@ -3,7 +3,7 @@ import zipfile
 import os
 import io
 import tempfile
-from stpyvista import stpyvista
+#from stpyvista import stpyvista
 from src_bisantis import *
 
 def list_files_in_zip(zip_file):
