@@ -2,6 +2,7 @@ import streamlit as st
 import zipfile
 import os
 import io
+import tempfile
 from src_bisantis import *
 
 def list_files_in_zip(zip_file):
@@ -9,74 +10,67 @@ def list_files_in_zip(zip_file):
         file_list = zip_ref.namelist()
     return file_list
 
-st.title("Caricamento e Visualizzazione di File ZIP")
+st.title("Analisi sezioni in c.a.")
 
-# Caricamento del file ZIP
-uploaded_file = st.file_uploader("Carica un file ZIP", type=["zip"])
+# Funzione per trovare sottocartelle
 
-if uploaded_file is not None:
-    st.success("File caricato con successo!")
-    
-    # Leggere il contenuto del file ZIP
-    file_contents = io.BytesIO(uploaded_file.read())
-    file_list = list_files_in_zip(file_contents)
-    
-    st.subheader("Contenuti della cartella ZIP:")
-    for file in file_list:
-        st.write(f"- {file}")
+# Funzione per estrarre ZIP
+def extract_zip(uploaded_file):
+    with zipfile.ZipFile(uploaded_file, "r") as zip_ref:
+        extract_path = "temp_extracted"
+        zip_ref.extractall(extract_path)
+    return extract_path
 
-pathStar = r"Z:\studio\CODIFICATE\200 BISantis - due volte prima\Areatecnica\Calcolo\Verifiche Domini"
-pathSec = trova_sottocartelle(pathStar)
-#print(pathSec)
+# Interfaccia Streamlit
+st.title("Analisi File ZIP e Generazione Report Word")
 
-#path = pathSec[1]
+uploaded_zip = st.file_uploader("Carica un file ZIP", type=["zip"])
 
-word_save = os.path.join(pathStar, "Report Verifiche.docx")
-# open an existing document
-doc = docx.Document()
-doc.add_heading("Report verifiche", level=1)
+if uploaded_zip:
+    st.success("📂 File ZIP caricato con successo!")
 
-for i, item in enumerate(pathSec):
-    #print(pathSec)
-    #print(pathSec[i])
-    path = pathSec[i]
-    path_cds = file_per_estensione(path, estensione=".xlsx", iniziali="cds")[0]
-    #print(path_cds)
-    cds = pd.read_excel(path_cds, usecols=range(1, 11, 1), skiprows= 1)
-    
-    cls_dict, steel_dict = setmaterial(path) # settaggio dei materiali
-    conc_sec = bildSection(path, cls_dict, steel_dict) # costruzione della sezione
-    im3d = domino3D(conc_sec, cls_dict, steel_dict, cds, n_points=5, n_level=5) # costruzione del dominio 3D
-    #im3d.show(interactive=True) #, auto_close=False
-    #input("Premi Invio per chiudere...")
-    #im3d.screenshot(r"C:\Users\d.gaudioso\Desktop\prova.png", window_size=[2020, 3035])  # Salva l'immagine in un file PNG
-    figure = subplot_figure1(im3d, conc_sec, cls_dict, steel_dict)
-    image_stream = BytesIO()
-    figure.savefig(image_stream, format="png")  # Salva l'immagine in memoria
-    image_stream.seek(0)  # Torna all'inizio del file in memoria
+    # Estrarre il file ZIP
+    extract_path = extract_zip(uploaded_zip)
+    st.write(f"📂 File estratti in: `{extract_path}`")
 
-    figure.savefig(path)
-    print('Figure written File successfully.')
+    # Trovare le sottocartelle
+    sottocartelle = trova_sottocartelle(extract_path)
+    st.write("📂 Sottocartelle trovate:", sottocartelle)
 
-    # saving the excel
-    nomefile = "verifiche_MxMyN_" + os.path.basename(path) +".xlsx"
-    cds.to_excel(os.path.join(path, nomefile))
-    print('DataFrame is written to Excel File successfully.')
+    # Creazione documento Word
+    doc = docx.Document()
+    doc.add_heading("Report verifiche", level=1)
 
-    ### TO WORD##
-    doc.add_heading(os.path.basename(path), level=2)
-    #Inserimento dell'immagine dal buffer di memoria
-    doc.add_picture(image_stream, width=docx.shared.Inches(5))  # Inserisce l'immagine dal buffer
+    for i, path in enumerate(sottocartelle):
+        st.write(f"🔍 Analizzando: `{path}`")
 
-    # 📌 Generiamo le immagini del dataframe
-    image_paths = save_dataframe_images(cds, rows_per_page=70)
+        # Trovare il primo file XLSX che inizia con "cds"
+        file_cds = file_per_estensione(path, estensione=".xlsx", iniziali="cds")
+        
+        if file_cds:
+            st.write(f"📊 File trovato: `{file_cds[0]}`")
+            df = pd.read_excel(file_cds[0], sheet_name="materiali")  # Leggiamo il foglio "materiali"
+            st.dataframe(df.head())  # Mostriamo un'anteprima su Streamlit
 
-    # 📌 Inseriamo le immagini in Word
-    doc.add_paragraph("Risultati in forma tabellare")
+            # Aggiungere intestazione al documento Word
+            doc.add_heading(f"📄 {os.path.basename(path)}", level=2)
 
-    for img in image_paths:
-        doc.add_picture(img, width = docx.shared.Inches(6))
-        doc.add_page_break()  # Aggiunge un'interruzione di pagina
+            # Salvataggio del dataframe in tabella Word
+            table = doc.add_table(rows=df.shape[0]+1, cols=df.shape[1])
+            for j, col_name in enumerate(df.columns):
+                table.cell(0, j).text = col_name
+            for i, row in df.iterrows():
+                for j, val in enumerate(row):
+                    table.cell(i+1, j).text = str(val)
 
-# 📌 Salviamo il documento
-doc.save(word_save)
+        else:
+            st.warning(f"⚠️ Nessun file `cds*.xlsx` trovato in `{path}`")
+
+    # Salvataggio finale
+    word_stream = BytesIO()
+    doc.save(word_stream)
+    word_stream.seek(0)
+
+    st.download_button("📥 Scarica Report Word", word_stream, "Report_Verifiche.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+    st.success("✅ Report Word generato con successo!")

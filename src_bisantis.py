@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import docx
+import streamlit as st
 #import seaborn as sns
 import matplotlib
 matplotlib.use("Agg")
@@ -90,12 +91,9 @@ import os
 
 def trova_sottocartelle(cartella_principale):
     """
-    Trova tutte le sottocartelle dentro la cartella principale e restituisce le loro path.
+    Trova tutte le sottocartelle dentro la cartella principale e le relative sottocartelle di secondo livello.
+    Restituisce un elenco di percorsi ordinati.
     """
-    if not os.path.exists(cartella_principale):
-        print(f"❌ Errore: La cartella '{cartella_principale}' non esiste.")
-        return []
-
     sottocartelle = []
 
     for nome_cartella in os.listdir(cartella_principale):
@@ -104,29 +102,32 @@ def trova_sottocartelle(cartella_principale):
         if os.path.isdir(percorso_cartella):  # Verifica se è una cartella
             sottocartelle.append(percorso_cartella)
 
-    return sottocartelle
+            # Cerca anche nel livello successivo
+            for nome_sottocartella in os.listdir(percorso_cartella):
+                percorso_sottocartella = os.path.join(percorso_cartella, nome_sottocartella)
+                if os.path.isdir(percorso_sottocartella):
+                    sottocartelle.append(percorso_sottocartella)
 
-def file_per_estensione(cartella_principale, estensione=".xlsx", iniziali="c"):
-    
-    """
-    Trova tutti i file con una data estensione e che iniziano con una data sequenza di lettere nel nome
-    nella cartella principale (senza esplorare sottocartelle).
-    """
-    if not os.path.exists(cartella_principale):
-        print(f"❌ Errore: La cartella '{cartella_principale}' non esiste.")
+    return sorted(sottocartelle)
+
+# Funzione per trovare file con estensione e prefisso specifico
+def file_per_estensione(cartella_principale, estensione=".xlsx", iniziali="cds"):
+    try:
+        if not os.path.exists(cartella_principale):
+            st.error(f"❌ Errore: La cartella '{cartella_principale}' non esiste.")
+            return []
+
+        return sorted([
+            os.path.join(cartella_principale, nome_file)
+            for nome_file in os.listdir(cartella_principale)
+            if os.path.isfile(os.path.join(cartella_principale, nome_file)) and
+               nome_file.lower().startswith(iniziali.lower()) and
+               nome_file.lower().endswith(estensione.lower())
+        ])
+
+    except Exception as e:
+        st.error(f"❌ Errore durante la ricerca dei file: {e}")
         return []
-
-    file_trovati = []
-
-    # Esplora solo i file nella cartella principale
-    for nome_file in os.listdir(cartella_principale):
-        percorso_file = os.path.join(cartella_principale, nome_file)
-        
-        if os.path.isfile(percorso_file):  # Verifica se è un file
-            if nome_file.endswith(estensione) and nome_file.lower().startswith(iniziali.lower()):
-                file_trovati.append(percorso_file)
-
-    return file_trovati
 
 
 #def analizeConcreateSection(pathInfo):
@@ -478,60 +479,3 @@ def subplot_figure1(im3d, conc_sec, cls_dict, steel_dict):
     plt.tight_layout()
     
     return fig
-
-"""
-## CLASTERING DELLE SOLLECITAZIONE
-path_cds = r"Z:\studio\CODIFICATE\200 BISantis - due volte prima\Areatecnica\Calcolo\Verifiche Domini\Ritti\cds_Ritto E_sup.xlsx"
-#print(path_cds)
-cds = pd.read_excel(path_cds, usecols=range(1, 11, 1), skiprows= 1)
-Ned = cds["Axial (kN)"]
-Med_y = cds["Moment-y (kN*m)"]
-Med_z = cds["Moment-z (kN*m)"]
-
-
-# Reshape dei dati solo per `Ned` (Z)
-Ned_reshaped = Ned.values.reshape(-1, 1)  # Convertiamo `Ned` in un array 2D (necessario per K-means)
-
-# Impostiamo il numero di cluster
-kmeans = KMeans(n_clusters=10)  # Cambia il numero di cluster se necessario
-
-# Applichiamo K-means solo su `Ned`
-kmeans.fit(Ned_reshaped)
-
-# Otteniamo le etichette di clustering per ciascun punto
-labels = kmeans.labels_
-
-# Calcoliamo le medie di `Ned` per ogni cluster
-cluster_means = []
-for i in range(kmeans.n_clusters):
-    cluster_points = Ned[labels == i]  # Seleziona i punti che appartengono al cluster i
-    cluster_mean = cluster_points.mean()  # Calcola la media
-    cluster_means.append(cluster_mean)
-
-# Visualizziamo i risultati
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-# Colori diversi per i cluster
-scatter = ax.scatter(Med_y, Med_z, Ned, c=labels, cmap='viridis')
-
-# Aggiungiamo le etichette degli assi
-ax.set_xlabel('Moment-y (kN*m)')
-ax.set_ylabel('Moment-z (kN*m)')
-ax.set_zlabel('Axial (kN)')
-
-# Creiamo una legenda personalizzata con le medie dei cluster
-legend_labels = [f"Cluster {i+1} (Mean N: {mean:.2f} kN)" for i, mean in enumerate(cluster_means)]
-custom_lines = [Line2D([0], [0], marker='o', color='w', markerfacecolor=scatter.cmap(i / len(cluster_means)), markersize=10) for i in range(kmeans.n_clusters)]
-
-# Aggiungiamo la legenda
-ax.legend(custom_lines, legend_labels, loc='upper left', fontsize=10)
-"""
-
-# Mostra il grafico
-#plt.show()
-
-"""
-___________________________________________________________________________________________
-RUN SCRIPT
-"""
