@@ -11,6 +11,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import pyvista as pv
 import numpy as np
 import ezdxf
+from stpyvista import stpyvista
 
 from concreteproperties.material import Concrete, SteelBar
 from concreteproperties.stress_strain_profile import (
@@ -91,9 +92,12 @@ import os
 
 def trova_sottocartelle(cartella_principale):
     """
-    Trova tutte le sottocartelle dentro la cartella principale e le relative sottocartelle di secondo livello.
-    Restituisce un elenco di percorsi ordinati.
+    Trova tutte le sottocartelle dentro la cartella principale e restituisce le loro path.
     """
+    if not os.path.exists(cartella_principale):
+        print(f"❌ Errore: La cartella '{cartella_principale}' non esiste.")
+        return []
+
     sottocartelle = []
 
     for nome_cartella in os.listdir(cartella_principale):
@@ -102,13 +106,7 @@ def trova_sottocartelle(cartella_principale):
         if os.path.isdir(percorso_cartella):  # Verifica se è una cartella
             sottocartelle.append(percorso_cartella)
 
-            # Cerca anche nel livello successivo
-            for nome_sottocartella in os.listdir(percorso_cartella):
-                percorso_sottocartella = os.path.join(percorso_cartella, nome_sottocartella)
-                if os.path.isdir(percorso_sottocartella):
-                    sottocartelle.append(percorso_sottocartella)
-
-    return sorted(sottocartelle)
+    return sottocartelle
 
 # Funzione per trovare file con estensione e prefisso specifico
 def file_per_estensione(cartella_principale, estensione=".xlsx", iniziali="cds"):
@@ -277,7 +275,7 @@ def domino3D(section, cls_dict, steel_dict, cds, n_points = 16, n_level = 10):
     dictDominio = {}
 
     for n in n_list:
-        b_result = conc_sec.biaxial_bending_diagram(n=n, n_points = n_points, progress_bar=False)
+        b_result = section.biaxial_bending_diagram(n=n, n_points = n_points, progress_bar=False)
         biaxial_results.append(b_result)
         dictDominio[n] = BiaxialBendingResults.get_results_lists(b_result)
         
@@ -303,7 +301,7 @@ def domino3D(section, cls_dict, steel_dict, cds, n_points = 16, n_level = 10):
         
     # Definizione del segmento di linea
     # Rendering del risultato
-    p = pv.Plotter(off_screen=True)
+    p = pv.Plotter()
     p.add_mesh(mesh, show_edges=True, opacity=0.8, cmap="viridis", scalars='Elevation', lighting=False, label="Dominio", show_scalar_bar=False)
     # Esegui il ray tracing
     point_cloud = pv.PolyData(Pcds)
