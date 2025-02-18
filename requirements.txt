@@ -28,5 +28,7 @@ streamlit_option_menu
 Pillow
 openpyxl
 python-docx
+sectionproperties
+concreteproperties
 
 
