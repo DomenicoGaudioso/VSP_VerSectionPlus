@@ -1,6 +1,6 @@
 pip
 streamlit>=1.33.0
-numpy
+numpy>=1.23.5
 matplotlib
 panel>=1.4.1
 bokeh
@@ -30,5 +30,9 @@ openpyxl
 python-docx
 sectionproperties
 concreteproperties
+ezdxf
+scikit-learn
+openpyxl
+
 
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import docx
-import seaborn as sns
+#import seaborn as sns
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -10,6 +10,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import pyvista as pv
 import numpy as np
 import ezdxf
+
 from concreteproperties.material import Concrete, SteelBar
 from concreteproperties.stress_strain_profile import (
     ConcreteLinear,
@@ -17,14 +18,18 @@ from concreteproperties.stress_strain_profile import (
     SteelElasticPlastic,
     EurocodeParabolicUltimate,
 )
-from sectionproperties.pre.library.concrete_sections import concrete_rectangular_section
+
 from concreteproperties.concrete_section import ConcreteSection
 from concreteproperties.results import MomentInteractionResults
 from concreteproperties.results import BiaxialBendingResults
+
+
+from sectionproperties.pre.library.concrete_sections import concrete_rectangular_section
 from sectionproperties.analysis import Section
 from sectionproperties.pre import CompoundGeometry, Geometry
 from concreteproperties.pre import add_bar
 from sklearn.cluster import KMeans
+
 import openpyxl
 from openpyxl.drawing.image import Image
 from io import BytesIO
@@ -529,61 +534,4 @@ ax.legend(custom_lines, legend_labels, loc='upper left', fontsize=10)
 """
 ___________________________________________________________________________________________
 RUN SCRIPT
-
 """
-
-pathStar = r"Z:\studio\CODIFICATE\200 BISantis - due volte prima\Areatecnica\Calcolo\Verifiche Domini"
-pathSec = trova_sottocartelle(pathStar)
-#print(pathSec)
-
-#path = pathSec[1]
-
-word_save = os.path.join(pathStar, "Report Verifiche.docx")
-# open an existing document
-doc = docx.Document()
-doc.add_heading("Report verifiche", level=1)
-
-for i, item in enumerate(pathSec):
-    #print(pathSec)
-    #print(pathSec[i])
-    path = pathSec[i]
-    path_cds = file_per_estensione(path, estensione=".xlsx", iniziali="cds")[0]
-    #print(path_cds)
-    cds = pd.read_excel(path_cds, usecols=range(1, 11, 1), skiprows= 1)
-    
-    cls_dict, steel_dict = setmaterial(path) # settaggio dei materiali
-    conc_sec = bildSection(path, cls_dict, steel_dict) # costruzione della sezione
-    im3d = domino3D(conc_sec, cls_dict, steel_dict, cds, n_points=5, n_level=5) # costruzione del dominio 3D
-    #im3d.show(interactive=True) #, auto_close=False
-    #input("Premi Invio per chiudere...")
-    #im3d.screenshot(r"C:\Users\d.gaudioso\Desktop\prova.png", window_size=[2020, 3035])  # Salva l'immagine in un file PNG
-    figure = subplot_figure1(im3d, conc_sec, cls_dict, steel_dict)
-    image_stream = BytesIO()
-    figure.savefig(image_stream, format="png")  # Salva l'immagine in memoria
-    image_stream.seek(0)  # Torna all'inizio del file in memoria
-
-    figure.savefig(path)
-    print('Figure written File successfully.')
-
-    # saving the excel
-    nomefile = "verifiche_MxMyN_" + os.path.basename(path) +".xlsx"
-    cds.to_excel(os.path.join(path, nomefile))
-    print('DataFrame is written to Excel File successfully.')
-
-    ### TO WORD##
-    doc.add_heading(os.path.basename(path), level=2)
-    #Inserimento dell'immagine dal buffer di memoria
-    doc.add_picture(image_stream, width=docx.shared.Inches(5))  # Inserisce l'immagine dal buffer
-
-    # 📌 Generiamo le immagini del dataframe
-    image_paths = save_dataframe_images(cds, rows_per_page=70)
-
-    # 📌 Inseriamo le immagini in Word
-    doc.add_paragraph("Risultati in forma tabellare")
-
-    for img in image_paths:
-        doc.add_picture(img, width = docx.shared.Inches(6))
-        doc.add_page_break()  # Aggiunge un'interruzione di pagina
-
-# 📌 Salviamo il documento
-doc.save(word_save)
