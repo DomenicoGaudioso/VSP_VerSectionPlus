@@ -27,6 +27,6 @@ streamlit_toggle
 streamlit_option_menu
 Pillow
 openpyxl
-docx
+python-docx
 
 
