@@ -67,6 +67,9 @@ for i, item in enumerate(pathSec):
     conc_sec = bildSection(path, cls_dict, steel_dict) # costruzione della sezione
     #st.write(conc_sec)
     im3d = domino3D(conc_sec, cls_dict, steel_dict, cds, n_points=5, n_level=5) # costruzione del dominio 3D
+    ## Send to streamlit
+    stpyvista(im3d, key="pv_dominio")
+    #st.pyplot(im3d)
     #im3d.show(interactive=True) #, auto_close=False
     #input("Premi Invio per chiudere...")
     #im3d.screenshot(r"C:\Users\d.gaudioso\Desktop\prova.png", window_size=[2020, 3035])  # Salva l'immagine in un file PNG
