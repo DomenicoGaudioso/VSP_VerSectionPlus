@@ -4,14 +4,15 @@ import docx
 import streamlit as st
 #import seaborn as sns
 import matplotlib
-matplotlib.use("Agg")
+#matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D  # Per aggiungere custom legend
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from stpyvista import stpyvista
 import pyvista as pv
 import numpy as np
 import ezdxf
-#from stpyvista import stpyvista
+
 
 from concreteproperties.material import Concrete, SteelBar
 from concreteproperties.stress_strain_profile import (
@@ -413,7 +414,7 @@ def save_dataframe_images(df, rows_per_page=30):
     return img_paths
 
 def subplot_figure1(im3d, conc_sec, cls_dict, steel_dict):
-    img_pv = im3d.screenshot(return_img=True)
+    img_pv = im3d.screenshot() #return_img=True
     #pv.close()
 
     # 📌 Creazione di una figura con gridspec per una disposizione personalizzata
