@@ -19,7 +19,7 @@ trame-vtk
 trame-vuetify
 openseespy
 graphviz
-scipy==1.11.1
+scipy
 streamlit_pdf_viewer
 plotly
 SALib
