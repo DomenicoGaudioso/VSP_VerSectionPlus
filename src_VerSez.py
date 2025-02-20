@@ -3,6 +3,7 @@ import zipfile
 import os
 import io
 import tempfile
+import shutil
 #from stpyvista import stpyvista
 from src_bisantis import *
 
@@ -25,6 +26,11 @@ def extract_zip(uploaded_file):
 
 # Interfaccia Streamlit
 st.title("Analisi File ZIP e Generazione Report Word")
+
+try:
+    shutil.rmtree("temp_extracted")
+except:
+    print("")
 
 uploaded_zip = st.file_uploader("Carica un file ZIP", type=["zip"])
 
@@ -103,6 +109,9 @@ for i, item in enumerate(pathSec):
 
 # 📌 Salviamo il documento
 doc.save(word_save)
+# Step 5: Cancella la cartella temporanea
+shutil.rmtree("temp_extracted")
+st.write("🗑️ Cartella temporanea eliminata manualmente.")
 
 
 
